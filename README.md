@@ -1,5 +1,7 @@
 # free-upload README
 
+## For now, just command+shigt+p and type "upload start".
+
 This is the README for your extension "free-upload". After writing up a brief description, we recommend including the following sections.
 
 ## Features

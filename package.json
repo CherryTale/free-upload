@@ -9,15 +9,32 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "*"
+  ],
   "main": "./extension.js",
   "contributes": {
     "commands": [
       {
         "command": "free-upload.uploadStart",
         "title": "upload start"
+      },
+      {
+        "command": "free-upload.uploadStop",
+        "title": "upload stop"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "free-upload Configuration",
+      "properties": {
+        "free-upload.uploadFolder": {
+          "type": "string",
+          "default": "",
+          "description": "The folder where uploaded files will be stored."
+        }
+      }
+    }
   },
   "scripts": {
     "lint": "eslint .",

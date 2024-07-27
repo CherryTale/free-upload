@@ -6,7 +6,7 @@ function UploadComponent({ uploadAddr }) {
             action: uploadAddr,
             name: "uploadFiles",
             multiple: true,
-            accept: "image/*,video/*",
+            //accept: "image/*,video/*",
             listType: "picture"
         },
         React.createElement(

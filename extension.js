@@ -1,41 +1,51 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
 const main = require('./src/index');
-
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
+	const output = vscode.window.createOutputChannel('Upload', { log: true });
+	const myStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	//vscode.window.showInformationMessage('Congratulations, your extension "free-upload" is now active!');
+	myStatusBarItem.text = '$(cloud-upload) Start';
+	myStatusBarItem.tooltip = 'Start Upload Server';
+	myStatusBarItem.command = 'free-upload.uploadStart';
+	myStatusBarItem.show();
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with  registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('free-upload.uploadStart', function () {
-		// The code you place here will be executed every time your command is executed
-
-		// Display a message box to the user
-		//vscode.window.showInformationMessage('Hello World from free-upload!');
-		if (global.uploadServer) {
-			return;
-		} else {
-			main();
+	let stopServer;
+	const startCmd = vscode.commands.registerCommand('free-upload.uploadStart', async function () {
+		output.show();
+		if (global.uploadServer !== "defined") {
 			global.uploadServer = "defined";
+
+			stopServer = await main(output);
+			myStatusBarItem.text = '$(cloud) Stop';
+			myStatusBarItem.tooltip = 'Stop Upload Server';
+			myStatusBarItem.command = 'free-upload.uploadStop';
+			myStatusBarItem.show();
 		}
 	});
 
-	context.subscriptions.push(disposable);
+	const stopCmd = vscode.commands.registerCommand('free-upload.uploadStop', function () {
+		global.uploadServer = undefined;
+		if (stopServer) {
+			stopServer();
+		}
+		myStatusBarItem.text = '$(cloud-upload) Start';
+		myStatusBarItem.tooltip = 'Start Upload Server';
+		myStatusBarItem.command = 'free-upload.uploadStart';
+		myStatusBarItem.show();
+	});
+
+	context.subscriptions.push(myStatusBarItem);
+	context.subscriptions.push(startCmd);
+	context.subscriptions.push(stopCmd);
 }
 
-// This method is called when your extension is deactivated
-function deactivate() { }
+function deactivate() {
+	vscode.commands.executeCommand('free-upload.uploadStop')
+}
 
 module.exports = {
 	activate,

@@ -1,25 +1,14 @@
 const { getInternalIP, getFreePort } = require('./utils.js');
 const createThenStartServer = require('./server.js');
-const path = require('path');
-const os = require('os');
-//const chalk = require('chalk');
 
-function main() {
+async function main(output) {
   try {
     const ip = getInternalIP();
-    const uploadURL = '/upload';
-    const uploadDir = path.join(os.homedir(), 'uploads');
-    getFreePort(start = 3000, end = 4000).then(port => {
-      createThenStartServer(ip, port, uploadURL, uploadDir);
-    })
+    const port = await getFreePort(3000, 4000);
+    return createThenStartServer(ip, port, output);
   } catch (err) {
-    //console.error(chalk.red(err));
-    console.error(err);
+    output.appendLine(err);
   }
 }
-
-//if (require.main === module) {
-//main();
-//}
 
 module.exports = main;

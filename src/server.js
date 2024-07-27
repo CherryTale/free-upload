@@ -1,23 +1,32 @@
+const os = require('os');
+const fs = require('fs').promises;
+const vscode = require('vscode');
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const qr = require('qrcode-terminal');
 const path = require('path');
-const fs = require('fs').promises;
-
-const vscode = require('vscode');
-const output = vscode.window.createOutputChannel('Upload');
-output.show();
-
-//const chalk = require('chalk');
 const { getFileNameWithTag } = require('./utils.js');
 
-function createThenStartServer(ip, port, uploadURL, uploadDir) {
+function createThenStartServer(ip, port, output) {
+  const uploadURL = '/upload';
+  let uploadDir = vscode.workspace.getConfiguration('free-upload').get('uploadFolder', path.join(os.homedir(), 'uploads'));
+  if (!uploadDir) {
+    uploadDir = path.join(os.homedir(), 'uploads');
+  }
+
   const app = express();
   app.use(fileUpload());
   app.use(express.static(path.join(__dirname, 'views', 'static')));
 
   app.get(uploadURL, (req, res) => {
     res.render(path.join(__dirname, 'views', 'index.ejs'), { uploadRoute: `http://${ip}:${port}${uploadURL}` });
+
+    let sourceAddr = req.ip;
+    if (sourceAddr.substr(0, 7) == "::ffff:") {
+      sourceAddr = sourceAddr.substr(7)
+    }
+    output.appendLine(`${sourceAddr} connected`);
+    vscode.window.showInformationMessage(`${sourceAddr} connected`);
   });
 
   app.post(uploadURL, async (req, res) => {
@@ -35,6 +44,7 @@ function createThenStartServer(ip, port, uploadURL, uploadDir) {
         const filePath = path.join(uploadDir, getFileNameWithTag(file.name));
         await fs.writeFile(filePath, file.data);
         output.appendLine('file://' + filePath);
+        vscode.window.showInformationMessage("Received " + file.name);
         return file.name;
       });
       const uploadedFileNames = await Promise.all(uploadPromises);
@@ -45,16 +55,28 @@ function createThenStartServer(ip, port, uploadURL, uploadDir) {
     }
   });
 
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     qr.generate(`http://${ip}:${port}${uploadURL}`, { small: true }, (qrcode) => {
-      output.appendLine(qrcode);
-      //output.appendLine(chalk.green(`Server is running on http://${ip}:${port}${uploadURL}`));
-      //output.appendLine(chalk.green(`Receiving files in ${uploadDir}`));
-      output.appendLine("Server is running on 🌐 " + `http://${ip}:${port}${uploadURL}`);
-      output.appendLine("Receiving files in 📁 file://" + uploadDir);
-      output.appendLine("Be sure you are using the 🚨️ " + "same network.");
+      const lines = qrcode.split('\n');
+      const filtered = lines.filter(line => line.trim() !== '');
+      filtered[filtered.length - 3] += "\tServer is running on 🌐 " + `http://${ip}:${port}${uploadURL}`;
+      filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
+      filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
+
+      output.appendLine('\n' + filtered.join('\n'));
     });
   });
+
+  function stopServer() {
+    server.close(() => {
+      output.appendLine('Gracefully Shutdown');
+    });
+  }
+  process.on('SIGTERM', stopServer);
+  process.on('SIGINT', stopServer);
+
+  return stopServer;
 }
 
+// eslint-disable-next-line no-undef
 module.exports = createThenStartServer;

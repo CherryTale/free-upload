@@ -41,11 +41,12 @@ function createThenStartServer(ip, port, output) {
       await fs.mkdir(uploadDir, { recursive: true });
 
       const uploadPromises = files.map(async (file) => {
-        const filePath = path.join(uploadDir, getFileNameWithTag(file.name));
+        const fileName = Buffer.from(file.name, "latin1").toString("utf8");
+        const filePath = path.join(uploadDir, getFileNameWithTag(fileName));
         await fs.writeFile(filePath, file.data);
         output.appendLine('file://' + filePath);
-        vscode.window.showInformationMessage("Received " + file.name);
-        return file.name;
+        vscode.window.showInformationMessage("Received " + fileName);
+        return fileName;
       });
       const uploadedFileNames = await Promise.all(uploadPromises);
       res.send(`Files uploaded successfully: ${uploadedFileNames.join(', ')}`);

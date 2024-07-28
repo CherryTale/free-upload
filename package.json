@@ -3,6 +3,7 @@
   "displayName": "free-upload",
   "description": "An upload server.",
   "version": "0.0.1",
+  "publisher": "zhuhaoran",
   "engines": {
     "vscode": "^1.91.0"
   },

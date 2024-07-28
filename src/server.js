@@ -17,6 +17,8 @@ function createThenStartServer(ip, port, output) {
   const app = express();
   app.use(fileUpload());
   app.use(express.static(path.join(__dirname, 'views', 'static')));
+  app.set('view engine', 'ejs');
+  app.engine('ejs', require('ejs').__express);
 
   app.get(uploadURL, (req, res) => {
     res.render(path.join(__dirname, 'views', 'index.ejs'), { uploadRoute: `http://${ip}:${port}${uploadURL}` });

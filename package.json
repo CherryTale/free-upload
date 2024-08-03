@@ -1,6 +1,7 @@
 {
   "name": "free-upload",
-  "displayName": "free-upload",
+  "displayName": "Free Upload",
+  "icon": "images/upload_flat.png",
   "description": "An upload server.",
   "version": "0.0.3",
   "publisher": "zhuhaoran",
@@ -27,7 +28,7 @@
     ],
     "configuration": {
       "type": "object",
-      "title": "free-upload Configuration",
+      "title": "Upload Configuration",
       "properties": {
         "free-upload.uploadFolder": {
           "type": "string",

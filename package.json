@@ -3,7 +3,7 @@
   "displayName": "Free Upload",
   "icon": "images/upload_flat.png",
   "description": "An upload server.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "zhuhaoran",
   "engines": {
     "vscode": "^1.91.0"

@@ -4,7 +4,13 @@ All notable changes to the "free-upload" extension will be documented in this fi
 
 ## [Unreleased]
 
-## [0.0.4] - 2024/08/03
+## [0.0.7] - 2024/08/19
+
+### 新增
+
+- 增加对 VS Code@^1.86.0 的支持
+
+## [0.0.6] - 2024/08/03
 
 ### 修改
 

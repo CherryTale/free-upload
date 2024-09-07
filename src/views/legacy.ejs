@@ -5,17 +5,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文件上传</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/spark-md5/3.0.2/spark-md5.min.js"></script>
     <link rel="stylesheet" href="./index.css" />
 </head>
 
 <body>
-    <input id="uploader" type="file" name="uploadFiles">
-    <progress id="progress-bar" value="0"></progress>
+    <input id="uploader" type="file" name="uploadFiles" multiple>
+    <ul id="progress-container"></ul>
     <script>
-        window.uploadURL = "<%= uploadRoute %>";
-        window.finishURL = "<%= finishRoute %>";
+        window.chunkUploadURL = "<%= chunkUploadURL %>";
+        window.finishURL = "<%= finishURL %>";
+        window.singleUploadURL = "<%= singleUploadURL %>";
     </script>
-    <script src="./ChunkUpload.js"></script>
+    <script src="./upload.js" type="module"></script>
 </body>
 
 </html>

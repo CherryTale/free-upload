@@ -6,9 +6,8 @@ import {
 
 const fileInput = document.getElementById('uploader');
 const progressContainer = document.getElementById('progress-container');
-// const progressBar = document.getElementById('progress-bar');
-const threshold = Math.pow(2, 26); // 大于64MiB开启分片上传
-const maxInParallel = 3;
+const threshold = Math.pow(2, 26);
+const maxInParallel = 5;
 
 fileInput.addEventListener('change', async (evt) => {
   const parallelController = new ParallelController(maxInParallel);
@@ -16,6 +15,7 @@ fileInput.addEventListener('change', async (evt) => {
   if (files.length === 0) {
     console.error('No file.');
   } else {
+    progressContainer.innerHTML = '';
     const promiseList = [];
     files.forEach(file => {
       const item = document.createElement('li');
@@ -36,6 +36,5 @@ fileInput.addEventListener('change', async (evt) => {
     await Promise.all(promiseList);
     console.log('All clear');
     evt.target.value = null;
-    progressContainer.innerHTML = '';
   }
 });

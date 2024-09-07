@@ -6,13 +6,13 @@ import {
   saveMapToLocalStorage,
 } from './utils.js';
 
-const chunkSize = 1024 * 1024; // 每个分片大小为1MB
+const chunkSize = 16 * 1024 * 1024;
 const chunkUploadURL = window.chunkUploadURL;
 const finishURL = window.finishURL;
 const SparkMD5 = window.SparkMD5;
-const chance = 3;
+const chance = 5;
 const retryDelay = 1000;
-const timeout = 333;
+const timeout = 3 * 60 * 1000;
 
 const uploadFinish = async (totalChunks, file, incrementalHash, parallelController) => {
   const finishData = new FormData();

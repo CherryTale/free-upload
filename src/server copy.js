@@ -94,7 +94,7 @@ function createThenStartServer(ip, port, uploadURL, uploadDir) {
           const wordArray = CryptoJS.lib.WordArray.create(fileBuffer);
           const localHash = CryptoJS.MD5(wordArray).toString(CryptoJS.enc.Hex);
           if (localHash !== hash) {
-            throw new Error('File Corrupted');
+            res.status(500).json({ message: `Failed. File Corrupted` });
           } else {
             fs.rmSync(chunkDir, { recursive: true, force: true });
             console.log(filePath);

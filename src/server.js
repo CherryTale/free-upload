@@ -26,10 +26,24 @@ function createThenStartServer(ip, port, output) {
   app.set('view engine', 'ejs');
   app.engine('ejs', require('ejs').__express);
 
-  app.get('/', (req, res) => {
+  app.get('/', async (req, res) => {
+    let files = [];
+    try {
+      files = await fs.readdir(uploadDir);
+    } catch (err) {
+      output.appendLine(`Error reading upload directory: ${err}`);
+    }
+    const uploadedFiles = files.map((file, i) => {
+      return {
+        uid: String(-i - 1),
+        name: file,
+        status: 'done',
+      }
+    })
     res.render(path.join(__dirname, 'views', 'index.ejs'), {
       uploadRoute: `http://${ip}:${port}${uploadURL}`,
       qrCode: qrCodeRef,
+      uploadedFiles: JSON.stringify(uploadedFiles),
     });
 
     let sourceAddr = req.ip;

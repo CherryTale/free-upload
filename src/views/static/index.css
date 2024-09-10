@@ -1,27 +1,81 @@
-#root {
-    padding: 1rem;
+html {
+    --big-gap: 1rem;
 }
 
-#messages {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-
-#messages li {
-    padding: 8px;
-    margin: 4px 0;
-    border: 1px solid #ccc;
+body {
+    padding: var(--big-gap);
+    gap: var(--big-gap);
     display: flex;
-    justify-content: space-between;
+    flex-direction: row;
+    flex-wrap: wrap;
+    background-color: #eee;
 }
 
-button {
-    margin-left: 10px;
+#qrcode {
+    border-radius: 15px;
+    height: 180px;
+
+    img {
+        height: 148px;
+    }
+
+    p {
+        text-align: center;
+        height: 32px;
+        line-height: 32px;
+        margin: 0;
+    }
 }
 
-input {
-    font-size: 16px;
+.panel {
+    border-radius: 15px;
+    box-shadow:
+        -5px -5px 15px rgba(255, 255, 255, 1),
+        5px 5px 15px rgba(0, 0, 0, 0.3);
+    flex-grow: 1;
+    flex-shrink: 1;
+    width: 40%;
+    min-width: 320px;
+    min-height: calc((100vh - 4rem - 180px) / 2);
+    padding: 16px;
+}
+
+#root {
+    .ant-upload-list-item-card-actions.picture {
+        display: none;
+    }
+}
+
+#copy {
+    #messages {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+
+        li {
+            padding: 8px;
+            margin: 4px 0;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+        }
+    }
+
+    form {
+        display: flex;
+        flex-direction: row;
+
+        input {
+            border-right: none;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        button {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+    }
 }
 
 /* #uploader {

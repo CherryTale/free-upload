@@ -109,7 +109,6 @@ function createThenStartServer(ip, port, output) {
         output.appendLine(`Server is running on 🌐 http://${ip}:${port}`);
         output.appendLine(`Receiving files in 📁 file://${uploadDir}`);
         output.appendLine(`Be sure you are using the 🚨️ same network`);
-        vscode.env.openExternal(`http://${ip}:${port}`);
       }
     });
   });
@@ -126,7 +125,10 @@ function createThenStartServer(ip, port, output) {
   };
   process.on('SIGTERM', stopServer);
   process.on('SIGINT', stopServer);
-  return stopServer;
+  return {
+    stopServer,
+    url: `http://${ip}:${port}`,
+  };
 }
 
 // eslint-disable-next-line no-undef

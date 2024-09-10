@@ -1,7 +1,7 @@
 {
   "name": "free-upload",
   "displayName": "LazPay Efficent Tools",
-  "icon": "images/upload_icon.png",
+  "icon": "images/upload_icon.jpg",
   "description": "An upload server.",
   "version": "0.0.7",
   "publisher": "zhuhaoran",
@@ -65,5 +65,8 @@
     "qrcode": "^1.5.4",
     "socket.io": "^4.7.5"
   },
-  "repository": "git@gitlab.alibaba-inc.com:qianran.zhr/lazpay-efficent-tools.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CherryTale/free-upload"
+  }
 }

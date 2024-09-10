@@ -4,7 +4,7 @@ All notable changes to the "free-upload" extension will be documented in this fi
 
 ## [Unreleased]
 
-## [0.0.8] - 2024/09/10
+## [0.0.11] - 2024/09/10
 
 ### 新增
 

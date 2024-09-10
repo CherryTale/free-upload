@@ -4,6 +4,16 @@ All notable changes to the "free-upload" extension will be documented in this fi
 
 ## [Unreleased]
 
+## [0.0.8] - 2024/09/10
+
+### 新增
+
+- 增加 copy 功能
+
+### 修改
+
+- 使用 webview
+
 ## [0.0.7] - 2024/08/19
 
 ### 新增

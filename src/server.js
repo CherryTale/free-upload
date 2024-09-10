@@ -3,9 +3,11 @@ const fs = require('fs').promises;
 const vscode = require('vscode');
 const express = require('express');
 const fileUpload = require('express-fileupload');
-const qr = require('qrcode-terminal');
+const QRCode = require('qrcode');
 const path = require('path');
 const { getFileNameWithTag } = require('./utils.js');
+
+let qrCodeRef = null;
 
 function createThenStartServer(ip, port, output) {
   const uploadURL = '/upload';
@@ -21,7 +23,10 @@ function createThenStartServer(ip, port, output) {
   app.engine('ejs', require('ejs').__express);
 
   app.get(uploadURL, (req, res) => {
-    res.render(path.join(__dirname, 'views', 'index.ejs'), { uploadRoute: `http://${ip}:${port}${uploadURL}` });
+    res.render(path.join(__dirname, 'views', 'index.ejs'), {
+      uploadRoute: `http://${ip}:${port}${uploadURL}`,
+      qrCode: qrCodeRef,
+    });
 
     let sourceAddr = req.ip;
     if (sourceAddr.substr(0, 7) == "::ffff:") {
@@ -59,14 +64,14 @@ function createThenStartServer(ip, port, output) {
   });
 
   const server = app.listen(port, () => {
-    qr.generate(`http://${ip}:${port}${uploadURL}`, { small: true }, (qrcode) => {
-      const lines = qrcode.split('\n');
-      const filtered = lines.filter(line => line.trim() !== '');
-      filtered[filtered.length - 3] += "\tServer is running on 🌐 " + `http://${ip}:${port}${uploadURL}`;
-      filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
-      filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
-
-      output.appendLine('\n' + filtered.join('\n'));
+    QRCode.toDataURL(`http://${ip}:${port}${uploadURL}`, { errorCorrectionLevel: 'H' }, (err, url) => {
+      if (err) {
+        output.appendLine(err);
+        return;
+      } else {
+        qrCodeRef = url;
+        vscode.env.openExternal(`http://${ip}:${port}${uploadURL}`);
+      }
     });
   });
 

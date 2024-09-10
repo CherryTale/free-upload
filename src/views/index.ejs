@@ -4,12 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文件上传</title>
+    <title>LazPay Efficent Tools</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/antd/4.23.4/antd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ant-design-icons/5.3.7/index.umd.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/antd/4.23.4/antd.min.css" />
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
     <script src="./UploadComponent.js"></script>
     <link rel="stylesheet" href="./index.css" />
 </head>
@@ -18,6 +20,11 @@
     <img src="<%= qrCode %>" alt="QR code to this page" title="QR code to this page" />
     <p>QR code to this page</p>
     <div id="root"></div>
+    <ul id="messages"></ul>
+    <form id="form" action="">
+        <input id="input" autocomplete="off" /><button>Send</button>
+    </form>
+
     <script>
         ReactDOM.render(
             React.createElement(
@@ -26,6 +33,58 @@
             ),
             document.getElementById('root')
         );
+
+        const socket = io();
+
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', input.value);
+                input.value = '';
+            }
+        });
+
+        const setMessage = (msg) => {
+            const item = document.createElement('li');
+            item.textContent = msg;
+
+            // 创建复制按钮
+            const copyButton = document.createElement('button');
+            copyButton.textContent = 'Copy';
+            copyButton.onclick = function () {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(msg).then(() => {
+                        console.log('Copied to clipboard: ' + msg);
+                    }).catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = msg;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        console.log('Copied to clipboard: ' + msg);
+                    } catch (err) {
+                        console.error('Failed to copy: ', err);
+                    }
+                    document.body.removeChild(textArea);
+                }
+            };
+
+            // 将按钮添加到列表项
+            item.appendChild(copyButton);
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        socket.on('chat message', setMessage);
+        socket.on('chat history', history => history.forEach(setMessage));
     </script>
 </body>
 

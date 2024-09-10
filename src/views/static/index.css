@@ -1,5 +1,6 @@
 html {
     --big-gap: 1rem;
+    --small-gap: 8px;
 }
 
 body {
@@ -54,10 +55,16 @@ body {
 
         li {
             padding: 8px;
-            margin: 4px 0;
-            border: 1px solid #ccc;
+            margin: var(--small-gap) 0;
+            border: 1px solid #d9d9d9;
+            border-radius: 2px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+
+            span {
+                overflow-wrap: anywhere;
+            }
         }
     }
 

@@ -43,4 +43,12 @@ function getFileNameWithTag(fileName) {
   return fileNameWithTag.replace(regex, '_');
 }
 
-module.exports = { getInternalIP, getFreePort, getFileNameWithTag };
+function getIPFromRequest(req) {
+  let sourceAddr = req?.ip;
+  if (sourceAddr?.substr(0, 7) === "::ffff:") {
+    sourceAddr = sourceAddr.substr(7)
+  }
+  return sourceAddr;
+}
+
+module.exports = { getInternalIP, getFreePort, getFileNameWithTag, getIPFromRequest };

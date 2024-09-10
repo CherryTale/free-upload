@@ -7,11 +7,10 @@ const fileUpload = require('express-fileupload');
 const socketIo = require('socket.io');
 const QRCode = require('qrcode');
 const path = require('path');
-const { getFileNameWithTag } = require('./utils.js');
+const { getFileNameWithTag, getIPFromRequest } = require('./utils.js');
 
 function createThenStartServer(ip, port, output) {
   const uploadURL = '/upload';
-  const chatURL = '/chat';
   const uploadDir = vscode.workspace.getConfiguration('free-upload').get('uploadFolder', '') || path.join(os.homedir(), 'uploads');
   let qrCodeRef = null;
   // 用于存储聊天消息的数组
@@ -46,12 +45,9 @@ function createThenStartServer(ip, port, output) {
       uploadedFiles: JSON.stringify(uploadedFiles),
     });
 
-    let sourceAddr = req.ip;
-    if (sourceAddr.substr(0, 7) == "::ffff:") {
-      sourceAddr = sourceAddr.substr(7)
-    }
-    output.appendLine(`${sourceAddr} connected`);
-    // vscode.window.showInformationMessage(`${sourceAddr} connected`);
+    const reqIp = getIPFromRequest(req);
+    output.appendLine(`${reqIp} connected`);
+    io.emit('chat message', `Server: ${reqIp} connected`);
   });
 
   app.post(uploadURL, async (req, res) => {
@@ -70,7 +66,7 @@ function createThenStartServer(ip, port, output) {
         const filePath = path.join(uploadDir, getFileNameWithTag(fileName));
         await fs.writeFile(filePath, file.data);
         output.appendLine('file://' + filePath);
-        // vscode.window.showInformationMessage("Received " + fileName);
+        io.emit('chat message', `Server: Received ${fileName} from ${getIPFromRequest(req)}`);
         return fileName;
       });
       const uploadedFileNames = await Promise.all(uploadPromises);
@@ -110,17 +106,24 @@ function createThenStartServer(ip, port, output) {
         return;
       } else {
         qrCodeRef = url;
+        output.appendLine(`Server is running on 🌐 http://${ip}:${port}`);
+        output.appendLine(`Receiving files in 📁 file://${uploadDir}`);
+        output.appendLine(`Be sure you are using the 🚨️ same network`);
         vscode.env.openExternal(`http://${ip}:${port}`);
       }
     });
   });
 
   const stopServer = () => {
-    io.emit('chat message', 'The server is shutting down.'); // 通知所有客户端服务器正在关闭
-    runningServer.close();
-    io.close();
-    output.appendLine('Server stopped');
-  }
+    io.emit('chat message', 'Server: The server is shutting down.'); // 通知所有客户端服务器正在关闭
+    runningServer.close(err => {
+      if (err) {
+        output.appendLine(`Error stopping server: ${err}`);
+      }
+      io.close();
+      output.appendLine('Server stopped');
+    });
+  };
   process.on('SIGTERM', stopServer);
   process.on('SIGINT', stopServer);
   return stopServer;

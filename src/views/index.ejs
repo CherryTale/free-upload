@@ -58,7 +58,9 @@
 
         const setMessage = (msg) => {
             const item = document.createElement('li');
-            item.textContent = msg;
+            const span = document.createElement('span');
+            span.textContent = msg;
+            item.appendChild(span);
 
             // 创建复制按钮
             const copyButton = document.createElement('button');

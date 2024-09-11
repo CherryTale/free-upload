@@ -1,5 +1,4 @@
-function UploadComponent({ uploadAddr, uploadedFiles }) {
-    console.log(uploadedFiles);
+function UploadComponent({ uploadAddr }) {
     return React.createElement(
         antd.Upload,
         {
@@ -7,7 +6,6 @@ function UploadComponent({ uploadAddr, uploadedFiles }) {
             name: "uploadFiles",
             multiple: true,
             listType: "picture",
-            defaultFileList: JSON.parse(uploadedFiles),
         },
         React.createElement(
             antd.Button,

@@ -11,7 +11,7 @@ function getWebviewContent(url) {
             <title>Webview</title>
         </head>
         <body style="padding:0">
-            <iframe src="${url}" style="width:100vw;height:100vh;border:none;"></iframe>
+            <iframe src="${url}" style="width:100vw;height:99vh;border:none;"></iframe>
         </body>
         </html>
     `;

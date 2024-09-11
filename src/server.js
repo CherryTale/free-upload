@@ -5,14 +5,13 @@ const http = require('http');
 const express = require('express');
 const fileUpload = require('express-fileupload');
 const socketIo = require('socket.io');
-const QRCode = require('qrcode');
+const qr = require('qrcode-terminal');
 const path = require('path');
 const { getFileNameWithTag, getIPFromRequest } = require('./utils.js');
 
 function createThenStartServer(ip, port, output) {
   const uploadURL = '/upload';
   const uploadDir = vscode.workspace.getConfiguration('free-upload').get('uploadFolder', '') || path.join(os.homedir(), 'uploads');
-  let qrCodeRef = null;
   // 用于存储聊天消息的数组
   const messageHistory = [];
 
@@ -26,23 +25,8 @@ function createThenStartServer(ip, port, output) {
   app.engine('ejs', require('ejs').__express);
 
   app.get('/', async (req, res) => {
-    let files = [];
-    try {
-      files = await fs.readdir(uploadDir);
-    } catch (err) {
-      output.appendLine(`Error reading upload directory: ${err}`);
-    }
-    const uploadedFiles = files.map((file, i) => {
-      return {
-        uid: String(-i - 1),
-        name: file,
-        status: 'done',
-      }
-    })
     res.render(path.join(__dirname, 'views', 'index.ejs'), {
       uploadRoute: `http://${ip}:${port}${uploadURL}`,
-      qrCode: qrCodeRef,
-      uploadedFiles: JSON.stringify(uploadedFiles),
     });
 
     const reqIp = getIPFromRequest(req);
@@ -100,16 +84,14 @@ function createThenStartServer(ip, port, output) {
   });
 
   const runningServer = server.listen(port, () => {
-    QRCode.toDataURL(`http://${ip}:${port}`, { errorCorrectionLevel: 'H' }, (err, url) => {
-      if (err) {
-        output.appendLine(err);
-        return;
-      } else {
-        qrCodeRef = url;
-        output.appendLine(`Server is running on 🌐 http://${ip}:${port}`);
-        output.appendLine(`Receiving files in 📁 file://${uploadDir}`);
-        output.appendLine(`Be sure you are using the 🚨️ same network`);
-      }
+    qr.generate(`http://${ip}:${port}`, { small: true }, (qrcode) => {
+      const lines = qrcode.split('\n');
+      const filtered = lines.filter(line => line.trim() !== '');
+      filtered[filtered.length - 3] += "\tServer is running on 🌐 " + `http://${ip}:${port}`;
+      filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
+      filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
+
+      output.appendLine('\n' + filtered.join('\n'));
     });
   });
 

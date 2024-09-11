@@ -17,10 +17,6 @@
 </head>
 
 <body>
-    <div id="qrcode">
-        <img src="<%= qrCode %>" alt="QR code to this page" title="QR code to this page" />
-        <p>QR code to this page</p>
-    </div>
     <div id="root" class="panel"></div>
     <div id="copy" class="panel">
         <ul id="messages"></ul>
@@ -36,7 +32,6 @@
                 UploadComponent,
                 {
                     uploadAddr: "<%= uploadRoute %>",
-                    uploadedFiles: '<%- uploadedFiles %>',
                 }
             ),
             document.getElementById('root')

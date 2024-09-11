@@ -12,22 +12,6 @@ body {
     background-color: #eee;
 }
 
-#qrcode {
-    border-radius: 15px;
-    height: 180px;
-
-    img {
-        height: 148px;
-    }
-
-    p {
-        text-align: center;
-        height: 32px;
-        line-height: 32px;
-        margin: 0;
-    }
-}
-
 .panel {
     border-radius: 15px;
     box-shadow:
@@ -82,6 +66,7 @@ body {
         button {
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
+            height: 34.141px;
         }
     }
 }

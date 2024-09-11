@@ -65,6 +65,10 @@
                 if (navigator.clipboard) {
                     navigator.clipboard.writeText(msg).then(() => {
                         console.log('Copied to clipboard: ' + msg);
+                        copyButton.textContent = 'Copied';
+                        setTimeout(() => {
+                            copyButton.textContent = 'Copy';
+                        }, 1000);
                     }).catch(err => {
                         console.error('Failed to copy: ', err);
                     });
@@ -76,6 +80,10 @@
                     try {
                         document.execCommand('copy');
                         console.log('Copied to clipboard: ' + msg);
+                        copyButton.textContent = 'Copied';
+                        setTimeout(() => {
+                            copyButton.textContent = 'Copy';
+                        }, 1000);
                     } catch (err) {
                         console.error('Failed to copy: ', err);
                     }

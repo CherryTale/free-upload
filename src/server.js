@@ -64,12 +64,10 @@ function createThenStartServer(ip, port, output) {
   io.on('connection', (socket) => {
     const { address } = socket.handshake;
     const userIp = address.substr(0, 7) === "::ffff:" ? address.substr(7) : address;
-    console.log('A user connected:', userIp);
     // 将历史消息发送给新连接的客户端
     socket.emit('chat history', messageHistory);
 
     socket.on('chat message', (msg) => {
-      console.log(`Client: ${msg}`); // 在控制台显示来自客户端的消息
 
       // 将新消息添加到历史数组
       messageHistory.push(msg);
@@ -79,7 +77,7 @@ function createThenStartServer(ip, port, output) {
     });
 
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${userIp}`);
+      output.appendLine(`${userIp} disconnected`);
     });
   });
 

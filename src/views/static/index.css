@@ -49,6 +49,10 @@ body {
             span {
                 overflow-wrap: anywhere;
             }
+
+            button {
+                width: 5rem;
+            }
         }
     }
 

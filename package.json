@@ -4,7 +4,7 @@
   "icon": "images/upload_icon.jpg",
   "description": "An upload server.",
   "version": "0.0.14",
-  "publisher": "zhuhaoran",
+  "publisher": "yueshhu",
   "engines": {
     "vscode": "^1.86.0"
   },

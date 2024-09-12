@@ -3,8 +3,8 @@
   "displayName": "LazPay Efficent Tools",
   "icon": "images/upload_icon.jpg",
   "description": "An upload server.",
-  "version": "0.0.16",
-  "publisher": "yueshhu",
+  "version": "0.0.14",
+  "publisher": "zhuhaoran",
   "engines": {
     "vscode": "^1.86.0"
   },

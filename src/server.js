@@ -7,11 +7,13 @@ const fileUpload = require('express-fileupload');
 const socketIo = require('socket.io');
 const qr = require('qrcode-terminal');
 const path = require('path');
+const ngrok = require('ngrok');
 const { getFileNameWithTag, getIPFromRequest } = require('./utils.js');
 
 function createThenStartServer(ip, port, output) {
   const uploadURL = '/upload';
   const uploadDir = vscode.workspace.getConfiguration('free-upload').get('uploadFolder', '') || path.join(os.homedir(), 'uploads');
+  const authtoken = vscode.workspace.getConfiguration('free-upload').get('authToken', '') || "2mG3aOFfRr6VRESr6skE4d1XmCX_3SZamRMDWBNNmFdW731BQ";
   // 用于存储聊天消息的数组
   const messageHistory = [];
 
@@ -81,16 +83,41 @@ function createThenStartServer(ip, port, output) {
     });
   });
 
-  const runningServer = server.listen(port, () => {
-    qr.generate(`http://${ip}:${port}`, { small: true }, (qrcode) => {
-      const lines = qrcode.split('\n');
-      const filtered = lines.filter(line => line.trim() !== '');
-      filtered[filtered.length - 3] += "\tServer is running on 🌐 " + `http://${ip}:${port}`;
-      filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
-      filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
+  const runningServer = server.listen(port, async () => {
+    const localUrl = `http://${ip}:${port}`;
 
-      output.appendLine('\n' + filtered.join('\n'));
-    });
+    try {
+      if (!authtoken) {
+        throw new Error('authtoken not found');
+      }
+      const remoteUrl = await ngrok.connect({
+        addr: port,
+        authtoken,
+      });
+
+      qr.generate(remoteUrl, { small: true }, (qrcode) => {
+        const lines = qrcode.split('\n');
+        const filtered = lines.filter(line => line.trim() !== '');
+        filtered[filtered.length - 3] += "\tServer is running on 🌐 " + remoteUrl;
+        filtered[filtered.length - 2] += "\tLocal address: " + localUrl;
+        filtered[filtered.length - 1] += "\tReceiving files in 📁 file://" + uploadDir;
+
+        output.appendLine('\n' + filtered.join('\n'));
+      });
+
+      output.appendLine(`ngrok tunnel established at ${remoteUrl}`);
+    } catch (err) {
+      output.appendLine(`ngrok tunnel failed: ${err}. Falling back to local URL.`);
+      qr.generate(localUrl, { small: true }, (qrcode) => {
+        const lines = qrcode.split('\n');
+        const filtered = lines.filter(line => line.trim() !== '');
+        filtered[filtered.length - 3] += "\tServer is running on 🌐 " + localUrl;
+        filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
+        filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
+
+        output.appendLine('\n' + filtered.join('\n'));
+      });
+    }
   });
 
   const stopServer = () => {
@@ -102,6 +129,7 @@ function createThenStartServer(ip, port, output) {
       io.close();
       output.appendLine('Server stopped');
     });
+    ngrok.disconnect();
   };
   process.on('SIGTERM', stopServer);
   process.on('SIGINT', stopServer);
@@ -111,5 +139,4 @@ function createThenStartServer(ip, port, output) {
   };
 }
 
-// eslint-disable-next-line no-undef
 module.exports = createThenStartServer;

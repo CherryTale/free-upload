@@ -25,6 +25,7 @@
             <button class="ant-btn ant-btn-primary">Send</button>
         </form>
     </div>
+    <a href="javascript:(async()=>{const r=[];const s=await navigator.mediaDevices.getDisplayMedia({video:!0,audio:!0});const m=new MediaRecorder(s);m.ondataavailable=e=>{if(e.data.size>0)r.push(e.data)};m.onstop=()=>{const b=new Blob(r,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='rec.webm';a.click();};m.start();alert('Recording... Click again to stop.');})();">点击录屏</a>
 
     <script>
         ReactDOM.render(

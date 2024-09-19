@@ -44,6 +44,14 @@ const config = {
                         loader: 'ts-loader'
                     }
                 ]
+            },
+            {
+                test: /\.node$/,
+                use: [
+                    {
+                        loader: 'node-loader'
+                    }
+                ]
             }
         ]
     }

@@ -10,7 +10,7 @@ const path = require('path');
 const ngrok = require('@ngrok/ngrok');
 const { getFileNameWithTag, getIPFromRequest } = require('./utils.js');
 
-function createThenStartServer(ip, port, output) {
+const createThenStartServer = async (ip, port, output) => {
   const localUrl = `http://${ip}:${port}`;
   let remoteUrl;
   const uploadURL = '/upload';
@@ -85,36 +85,46 @@ function createThenStartServer(ip, port, output) {
     });
   });
 
-  const runningServer = server.listen(port, () => {
-    ngrok.forward({
-      addr: port,
-      authtoken,
-    }).then(listener => {
-      remoteUrl = listener.url();
-      output.appendLine(remoteUrl);
-
-      qr.generate(remoteUrl, { small: true }, (qrcode) => {
-        const lines = qrcode.split('\n');
-        const filtered = lines.filter(line => line.trim() !== '');
-        filtered[filtered.length - 3] += "\tRemote address: " + remoteUrl;
-        filtered[filtered.length - 2] += "\tLocal address: " + localUrl;
-        filtered[filtered.length - 1] += "\tReceiving files in 📁 file://" + uploadDir;
-
-        output.appendLine('\n' + filtered.join('\n'));
-      });
-    }).catch(err => {
-      output.appendLine(`ngrok tunnel failed: ${err}. Falling back to local URL.`);
-      qr.generate(localUrl, { small: true }, (qrcode) => {
-        const lines = qrcode.split('\n');
-        const filtered = lines.filter(line => line.trim() !== '');
-        filtered[filtered.length - 3] += "\tServer is running on 🌐 " + localUrl;
-        filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
-        filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
-
-        output.appendLine('\n' + filtered.join('\n'));
+  const serverListen = (server, port) => {
+    return new Promise((res, rej) => {
+      server.listen(port, err => {
+        if (err) {
+          rej(err);
+        } else {
+          res(server);
+        }
       });
     });
-  });
+  }
+
+  const runningServer = await serverListen(server, port);
+  try {
+    const listener = await ngrok.forward({ addr: port, authtoken });
+    remoteUrl = listener.url();
+    output.appendLine(remoteUrl);
+
+    qr.generate(remoteUrl, { small: true }, (qrcode) => {
+      const lines = qrcode.split('\n');
+      const filtered = lines.filter(line => line.trim() !== '');
+      filtered[filtered.length - 3] += "\tRemote address: " + remoteUrl;
+      filtered[filtered.length - 2] += "\tLocal address: " + localUrl;
+      filtered[filtered.length - 1] += "\tReceiving files in 📁 file://" + uploadDir;
+
+      output.appendLine('\n' + filtered.join('\n'));
+    });
+  } catch (err) {
+    output.appendLine(`ngrok tunnel failed: ${err}. Falling back to local URL.`);
+    qr.generate(localUrl, { small: true }, (qrcode) => {
+      const lines = qrcode.split('\n');
+      const filtered = lines.filter(line => line.trim() !== '');
+      filtered[filtered.length - 3] += "\tServer is running on 🌐 " + localUrl;
+      filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
+      filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
+
+      output.appendLine('\n' + filtered.join('\n'));
+    });
+
+  }
 
   const stopServer = () => {
     io.emit('chat message', 'Server: The server is shutting down.'); // 通知所有客户端服务器正在关闭
@@ -129,10 +139,7 @@ function createThenStartServer(ip, port, output) {
   };
   process.on('SIGTERM', stopServer);
   process.on('SIGINT', stopServer);
-  return {
-    stopServer,
-    url: remoteUrl || localUrl,
-  };
+  return { stopServer, url: remoteUrl || localUrl };
 }
 
 module.exports = createThenStartServer;

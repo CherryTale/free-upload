@@ -5,7 +5,7 @@ async function main(output) {
   try {
     const ip = getInternalIP();
     const port = await getFreePort(3000, 4000);
-    return createThenStartServer(ip, port, output);
+    return await createThenStartServer(ip, port, output);
   } catch (err) {
     output.appendLine(err);
   }

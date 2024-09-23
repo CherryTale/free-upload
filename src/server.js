@@ -101,7 +101,6 @@ const createThenStartServer = async (ip, port, output) => {
   try {
     const listener = await ngrok.forward({ addr: port, authtoken });
     remoteUrl = listener.url();
-    output.appendLine(remoteUrl);
   } catch (err) {
     output.appendLine(`ngrok tunnel failed: ${err}. Falling back to local URL.`);
   }
@@ -110,23 +109,20 @@ const createThenStartServer = async (ip, port, output) => {
     qr.generate(remoteUrl, { small: true }, (qrcode) => {
       const lines = qrcode.split('\n');
       const filtered = lines.filter(line => line.trim() !== '');
-      filtered[filtered.length - 3] += "\tRemote address: " + remoteUrl;
-      filtered[filtered.length - 2] += "\tLocal address: " + localUrl;
-      filtered[filtered.length - 1] += "\tReceiving files in 📁 file://" + uploadDir;
-
-      output.appendLine('\n' + filtered.join('\n'));
-    });
-  } else {
-    qr.generate(localUrl, { small: true }, (qrcode) => {
-      const lines = qrcode.split('\n');
-      const filtered = lines.filter(line => line.trim() !== '');
-      filtered[filtered.length - 3] += "\tServer is running on 🌐 " + localUrl;
-      filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
-      filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
+      filtered[filtered.length - 1] += "\tRemote address: " + remoteUrl;
 
       output.appendLine('\n' + filtered.join('\n'));
     });
   }
+  qr.generate(localUrl, { small: true }, (qrcode) => {
+    const lines = qrcode.split('\n');
+    const filtered = lines.filter(line => line.trim() !== '');
+    filtered[filtered.length - 3] += "\tServer is running on 🌐 " + localUrl;
+    filtered[filtered.length - 2] += "\tReceiving files in 📁 file://" + uploadDir;
+    filtered[filtered.length - 1] += "\tBe sure you are using the 🚨️ same network.";
+
+    output.appendLine('\n' + filtered.join('\n'));
+  });
 
   const stopServer = () => {
     io.emit('chat message', 'Server: The server is shutting down.'); // 通知所有客户端服务器正在关闭
@@ -141,7 +137,7 @@ const createThenStartServer = async (ip, port, output) => {
   };
   process.on('SIGTERM', stopServer);
   process.on('SIGINT', stopServer);
-  return { stopServer, url: remoteUrl || localUrl };
+  return { stopServer, remoteUrl, localUrl };
 }
 
 module.exports = createThenStartServer;

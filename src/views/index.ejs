@@ -27,24 +27,19 @@
     </div>
 
     <script>
-        // 检查是否支持 getDisplayMedia
-        if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-            console.log("Screen Capture API is supported!");
-        } else {
-            console.log("Screen Capture API is not supported!");
-        }
-
-        // 检查是否支持 MediaRecorder
-        if (typeof MediaRecorder !== 'undefined') {
+        if (typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
             console.log("MediaRecorder API is supported!");
+
+            // 动态导入录屏功能的 JS 文件
+            import('./recorder.js').then(() => {
+                console.log('Recorder module loaded successfully.');
+            }).catch((err) => {
+                console.error('Failed to load the recorder module', err);
+            });
         } else {
             console.log("MediaRecorder API is not supported!");
         }
     </script>
-    <a
-        href="javascript:(async()=>{const r=[];const s=await navigator.mediaDevices.getDisplayMedia({video:!0,audio:!0});const m=new MediaRecorder(s);m.ondataavailable=e=>{if(e.data.size>0)r.push(e.data)};m.onstop=()=>{const b=new Blob(r,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='rec.webm';a.click();};m.start();alert('Recording... Click again to stop.');})();">点击录屏</a>
-
-
 
     <script>
         ReactDOM.render(

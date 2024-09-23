@@ -102,7 +102,11 @@ const createThenStartServer = async (ip, port, output) => {
     const listener = await ngrok.forward({ addr: port, authtoken });
     remoteUrl = listener.url();
     output.appendLine(remoteUrl);
+  } catch (err) {
+    output.appendLine(`ngrok tunnel failed: ${err}. Falling back to local URL.`);
+  }
 
+  if (remoteUrl) {
     qr.generate(remoteUrl, { small: true }, (qrcode) => {
       const lines = qrcode.split('\n');
       const filtered = lines.filter(line => line.trim() !== '');
@@ -112,8 +116,7 @@ const createThenStartServer = async (ip, port, output) => {
 
       output.appendLine('\n' + filtered.join('\n'));
     });
-  } catch (err) {
-    output.appendLine(`ngrok tunnel failed: ${err}. Falling back to local URL.`);
+  } else {
     qr.generate(localUrl, { small: true }, (qrcode) => {
       const lines = qrcode.split('\n');
       const filtered = lines.filter(line => line.trim() !== '');
@@ -123,7 +126,6 @@ const createThenStartServer = async (ip, port, output) => {
 
       output.appendLine('\n' + filtered.join('\n'));
     });
-
   }
 
   const stopServer = () => {

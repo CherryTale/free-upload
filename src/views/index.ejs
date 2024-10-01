@@ -104,7 +104,6 @@
         let peerConnections = {};
 
         socket.on('new-peer', (peerId) => {
-            console.log('evt new-peer');
             const peerConnection = new RTCPeerConnection();
             peerConnections[peerId] = peerConnection;
 
@@ -113,22 +112,33 @@
             peerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
             peerConnection.onicecandidate = (event) => {
-                console.log('on icecandidate');
                 if (event.candidate) {
                     socket.emit('ice-candidate', { candidate: event.candidate, peerId });
                 }
             };
 
             peerConnection.ontrack = (event) => {
-                console.log('on track');
-                const remoteVideo = document.createElement('video');
-                remoteVideo.srcObject = event.streams[0];
-                remoteVideo.autoplay = true;
-                document.body.appendChild(remoteVideo);
-            };
+                const streamId = event.streams[0].id;  // 获取流的 ID，确保唯一性
 
-            peerConnection.oniceconnectionstatechange = () => {
-                console.log('ICE connection state:', peerConnection.iceConnectionState);
+                if (event.track.kind === 'video') {
+                    let existingVideo = document.querySelector(`video[data-stream-id="${streamId}"]`);
+                    if (!existingVideo) {
+                        const remoteVideo = document.createElement('video');
+                        remoteVideo.srcObject = event.streams[0];
+                        remoteVideo.autoplay = true;
+                        remoteVideo.setAttribute('data-stream-id', streamId);  // 设置唯一标识符，防止重复添加
+                        document.body.appendChild(remoteVideo);
+                    }
+                } else if (event.track.kind === 'audio') {
+                    let existingAudio = document.querySelector(`audio[data-stream-id="${streamId}"]`);
+                    if (!existingAudio) {
+                        const remoteAudio = document.createElement('audio');
+                        remoteAudio.srcObject = event.streams[0];
+                        remoteAudio.autoplay = true;
+                        remoteAudio.setAttribute('data-stream-id', streamId);  // 设置唯一标识符，防止重复添加
+                        document.body.appendChild(remoteAudio);
+                    }
+                }
             };
 
             peerConnection.createOffer().then(offer => {
@@ -139,20 +149,13 @@
         });
 
         socket.on('offer', async ({ offer, peerId }) => {
-            console.log('evt offer');
-
             const peerConnection = new RTCPeerConnection();
             peerConnections[peerId] = peerConnection;
 
             peerConnection.onicecandidate = (event) => {
-                console.log('on icecandidate');
                 if (event.candidate) {
                     socket.emit('ice-candidate', { candidate: event.candidate, peerId });
                 }
-            };
-
-            peerConnection.oniceconnectionstatechange = () => {
-                console.log('ICE connection state:', peerConnection.iceConnectionState);
             };
 
             localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
@@ -160,19 +163,13 @@
             const answer = await peerConnection.createAnswer();
             await peerConnection.setLocalDescription(answer);
             socket.emit('answer', { answer, peerId });
-
-            console.log(peerConnections);
         });
 
         socket.on('answer', async ({ answer, peerId }) => {
-            console.log('evt answer');
             await peerConnections[peerId].setRemoteDescription(new RTCSessionDescription(answer));
-
-            console.log(peerConnections);
         });
 
         socket.on('ice-candidate', ({ candidate, peerId }) => {
-            console.log('evt ice-candidate');
             peerConnections[peerId].addIceCandidate(new RTCIceCandidate(candidate));
         });
 

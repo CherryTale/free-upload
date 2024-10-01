@@ -75,6 +75,10 @@ body {
     }
 }
 
+video {
+    width: 100%;
+}
+
 /* #uploader {
     font-size: 1rem;
 }

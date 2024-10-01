@@ -65,6 +65,7 @@ const createThenStartServer = async (ip, port, output) => {
     }
   });
 
+  let shareId;
   io.on('connection', (socket) => {
     const { address } = socket.handshake;
     const userIp = address.substr(0, 7) === "::ffff:" ? address.substr(7) : address;
@@ -72,15 +73,36 @@ const createThenStartServer = async (ip, port, output) => {
     socket.emit('chat history', messageHistory);
 
     socket.on('chat message', (msg) => {
-
-      // 将新消息添加到历史数组
       messageHistory.push(msg);
-
-      // 广播给所有连接的客户端
       io.emit('chat message', msg);
     });
 
+    socket.on('start-share', () => {
+      shareId = socket.id;
+      socket.broadcast.emit('new-peer', shareId);
+    });
+
+    if (shareId) {
+      socket.emit('new-peer', shareId);
+    }
+
+    socket.on('offer', (data) => {
+      io.to(data.peerId).emit('offer', { offer: data.offer, peerId: socket.id });
+    });
+
+    socket.on('answer', (data) => {
+      io.to(data.peerId).emit('answer', { answer: data.answer, peerId: socket.id });
+    });
+
+    socket.on('ice-candidate', (data) => {
+      io.to(data.peerId).emit('ice-candidate', { candidate: data.candidate, peerId: socket.id });
+    });
+
+    socket.on('stop-share', () => {
+    });
+
     socket.on('disconnect', () => {
+      socket.broadcast.emit('peer-disconnected', socket.id);
       output.appendLine(`${userIp} disconnected`);
     });
   });

@@ -27,21 +27,6 @@
     </div>
 
     <script>
-        if (typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-            console.log("MediaRecorder API is supported!");
-
-            // 动态导入录屏功能的 JS 文件
-            import('./recorder.js').then(() => {
-                console.log('Recorder module loaded successfully.');
-            }).catch((err) => {
-                console.error('Failed to load the recorder module', err);
-            });
-        } else {
-            console.log("MediaRecorder API is not supported!");
-        }
-    </script>
-
-    <script>
         ReactDOM.render(
             React.createElement(
                 UploadComponent,
@@ -114,6 +99,108 @@
 
         socket.on('chat message', setMessage);
         socket.on('chat history', history => history.forEach(setMessage));
+
+        let localStream;
+        let peerConnections = {};
+
+        socket.on('new-peer', (peerId) => {
+            console.log('evt new-peer');
+            const peerConnection = new RTCPeerConnection();
+            peerConnections[peerId] = peerConnection;
+
+            // 添加用于接收远程流的 transceiver
+            peerConnection.addTransceiver('video', { direction: 'recvonly' });
+            peerConnection.addTransceiver('audio', { direction: 'recvonly' });
+
+            peerConnection.onicecandidate = (event) => {
+                console.log('on icecandidate');
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { candidate: event.candidate, peerId });
+                }
+            };
+
+            peerConnection.ontrack = (event) => {
+                console.log('on track');
+                const remoteVideo = document.createElement('video');
+                remoteVideo.srcObject = event.streams[0];
+                remoteVideo.autoplay = true;
+                document.body.appendChild(remoteVideo);
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE connection state:', peerConnection.iceConnectionState);
+            };
+
+            peerConnection.createOffer().then(offer => {
+                return peerConnection.setLocalDescription(offer);
+            }).then(() => {
+                socket.emit('offer', { offer: peerConnection.localDescription, peerId });
+            });
+        });
+
+        socket.on('offer', async ({ offer, peerId }) => {
+            console.log('evt offer');
+
+            const peerConnection = new RTCPeerConnection();
+            peerConnections[peerId] = peerConnection;
+
+            peerConnection.onicecandidate = (event) => {
+                console.log('on icecandidate');
+                if (event.candidate) {
+                    socket.emit('ice-candidate', { candidate: event.candidate, peerId });
+                }
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE connection state:', peerConnection.iceConnectionState);
+            };
+
+            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            socket.emit('answer', { answer, peerId });
+
+            console.log(peerConnections);
+        });
+
+        socket.on('answer', async ({ answer, peerId }) => {
+            console.log('evt answer');
+            await peerConnections[peerId].setRemoteDescription(new RTCSessionDescription(answer));
+
+            console.log(peerConnections);
+        });
+
+        socket.on('ice-candidate', ({ candidate, peerId }) => {
+            console.log('evt ice-candidate');
+            peerConnections[peerId].addIceCandidate(new RTCIceCandidate(candidate));
+        });
+
+        // 检查 MediaRecorder API 是否支持
+        if (typeof MediaRecorder !== 'undefined' && navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+            // 创建按钮
+            const button = document.createElement('button');
+            button.innerText = '点击开始分享屏幕';
+            button.style.padding = '10px 20px';
+            button.style.fontSize = '16px';
+            document.body.appendChild(button);
+
+            // 绑定按钮点击事件
+            button.addEventListener('click', async () => {
+                if (!localStream) {
+                    try {
+                        localStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+                        socket.emit('start-share');
+                    } catch (err) {
+                        console.error("Error accessing display media: ", err);
+                    }
+                } else {
+                    localStream.getTracks().forEach(track => track.stop());
+                    socket.emit('stop-share');
+                    localStream = null;
+                }
+            });
+        }
     </script>
 </body>
 

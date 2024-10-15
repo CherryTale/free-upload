@@ -1,0 +1,47 @@
+#copy {
+    position: relative;
+    height: calc(100vh - 2 * var(--big-gap));
+    min-height: 40rem;
+    box-sizing: border-box;
+
+    @media only screen and (max-width: 600px) {
+        height: 100vh;
+    }
+
+    .feature-buttons {
+        height: 2rem;
+        display: flex;
+        gap: var(--small-gap);
+    }
+
+    .hr {
+        border-bottom: 1px solid #ccc;
+        margin: var(--small-gap) 0;
+    }
+
+    #messages {
+        list-style-type: none;
+        margin: 0 0 var(--small-gap);
+        padding: 0;
+        height: calc(100% - 13rem - var(--small-gap));
+        overflow: auto;
+    }
+
+    .input-area {
+        bottom: var(--big-gap);
+        position: relative;
+        bottom: 0;
+        min-width: 26rem;
+
+        .ql-editor {
+            height: calc(10rem - 41.14px);
+        }
+
+        .send-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            margin: 4.5px;
+        }
+    }
+}

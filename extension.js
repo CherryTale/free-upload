@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const main = require('./src/index');
+const createThenStartServer = require('./src/index');
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -14,12 +14,12 @@ function activate(context) {
 	myStatusBarItem.show();
 
 	let stopServer;
-	const startCmd = vscode.commands.registerCommand('free-upload.uploadStart', async function () {
+	const startCmd = vscode.commands.registerCommand('free-upload.uploadStart', async () => {
 		output.show();
 		if (global.uploadServer !== "defined") {
 			global.uploadServer = "defined";
 
-			const result = await main(output);
+			const result = await createThenStartServer(output);
 			stopServer = result.stopServer;
 			myStatusBarItem.text = '$(cloud) Stop';
 			myStatusBarItem.tooltip = 'Stop Upload Server';
@@ -28,7 +28,7 @@ function activate(context) {
 		}
 	});
 
-	const stopCmd = vscode.commands.registerCommand('free-upload.uploadStop', function () {
+	const stopCmd = vscode.commands.registerCommand('free-upload.uploadStop', () => {
 		global.uploadServer = undefined;
 		if (stopServer) {
 			stopServer();

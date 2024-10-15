@@ -1,0 +1,74 @@
+html {
+    --big-gap: 1rem;
+    --small-gap: 0.5rem;
+}
+
+body {
+    margin: 0;
+    padding: var(--big-gap);
+    background-color: #eee;
+    display: flex;
+    justify-content: center;
+}
+
+.panel {
+    border-radius: 1rem;
+    box-shadow:
+        -0.3rem -0.3rem 1rem rgba(255, 255, 255, 1),
+        0.3rem 0.3rem 1rem rgba(0, 0, 0, 0.3);
+    min-width: calc(26rem + 2 * var(--big-gap));
+    width: 90vmin;
+    padding: var(--big-gap);
+}
+
+@media only screen and (max-width: 600px) {
+    body {
+        padding: 0;
+        display: initial;
+    }
+
+    .panel {
+        border-radius: 0;
+        box-shadow: none;
+        min-width: calc(26rem + 2 * var(--big-gap));
+        width: 100%;
+        padding: var(--big-gap);
+    }
+}
+
+/* 定义整个滚动条宽度或高度 */
+::-webkit-scrollbar {
+    width: 12px;
+    /* 纵向滚动条宽度 */
+    height: 12px;
+    /* 横向滚动条高度 */
+}
+
+/* 定义滚动条轨道 */
+::-webkit-scrollbar-track {
+    background: #ffffff;
+    /* 滚动槽背景颜色 */
+    border-radius: 10px;
+    /* 滚动槽圆角 */
+}
+
+/* 定义滑块的样式 */
+::-webkit-scrollbar-thumb {
+    background: #888;
+    /* 滑块的默认颜色 */
+    border-radius: 10px;
+    /* 滑块圆角 */
+    border: 3px solid #ffffff;
+    /* 为滑块添加外边距，让它看起来更窄 */
+}
+
+/* 鼠标悬停时滑块的样式 */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+    /* 悬停时滑块颜色变深 */
+}
+
+/* 设置双向滚动条的右下角 */
+::-webkit-scrollbar-corner {
+    background: #ffffff;
+}

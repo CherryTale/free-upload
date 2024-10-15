@@ -1,0 +1,20 @@
+#uploader {
+    font-size: 1rem;
+}
+
+#progress-container {
+    margin: 8px 0;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+
+    li {
+        padding: 4px 0;
+
+        progress {
+            margin-left: var(--big-gap);
+        }
+    }
+}

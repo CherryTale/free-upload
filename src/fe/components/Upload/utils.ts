@@ -1,42 +1,62 @@
-export const saveMapToLocalStorage = (map, storageKey) => {
+// 保存 Map 到 localStorage
+export const saveMapToLocalStorage = (map: Map<number, string>, storageKey: string): void => {
   const mapArray = Array.from(map);
   const mapJson = JSON.stringify(mapArray);
   localStorage.setItem(storageKey, mapJson);
-}
+};
 
-export const loadMapFromLocalStorage = (storageKey) => {
+// 从 localStorage 加载 Map
+export const loadMapFromLocalStorage = (storageKey: string): Map<number, string> => {
   const mapJson = localStorage.getItem(storageKey);
   if (mapJson === null) {
-    return new Map();
+    return new Map<number, string>();
   } else {
-    const mapArray = JSON.parse(mapJson);
-    return new Map(mapArray);
+    const mapArray: [number, string][] = JSON.parse(mapJson);
+    return new Map<number, string>(mapArray);
   }
-}
+};
 
-export const fetchWithTimeout = async (promiseGenerator, timeout) => {
+// 带有超时功能的 XHR
+export const XhrWithTimeout = async (
+  promiseGenerator: (signal: AbortSignal) => Promise<{ json: () => Promise<any> }>,
+  timeout: number
+): Promise<{ json: () => Promise<any> }> => {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
+
   try {
     const response = await promiseGenerator(controller.signal);
     clearTimeout(timeoutId);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     if (error.name === 'AbortError') {
       throw new Error(`Timed out after ${timeout} ms`);
     } else {
       throw error;
     }
   }
+};
+
+// 自定义的 XMLHttpRequest 封装
+interface CustomXHROptions {
+  method?: string;
+  headers?: Record<string, string>;
+  body?: XMLHttpRequestBodyInit | null;
+  signal?: AbortSignal;
 }
 
-export const customXHR = (url, options = {}, onprogress = () => { }) => {
+export const customXHR = (
+  url: string,
+  options: CustomXHROptions = {},
+  onprogress: (event: ProgressEvent) => void = () => { }
+): Promise<{ json: () => Promise<any> }> => {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open(options.method || 'GET', url);
     Object.entries(options.headers || {}).forEach(([key, value]) => {
       xhr.setRequestHeader(key, value);
     });
+
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         resolve({ json: () => Promise.resolve(xhr.responseText ? JSON.parse(xhr.responseText) : null) });
@@ -44,31 +64,35 @@ export const customXHR = (url, options = {}, onprogress = () => { }) => {
         reject(new Error(`Request failed with status ${xhr.status}`));
       }
     };
+
     xhr.onerror = () => {
       reject(new Error('Network Error'));
     };
+
     xhr.upload.onprogress = onprogress;
+
     options.signal?.addEventListener('abort', () => {
       xhr.abort();
       reject(new Error('Request aborted'));
     });
+
     xhr.send(options.body || null);
   });
 };
 
-export const promiseWithRetry = async (
-  promiseGenerator,
-  chance,
-  beforeRetry = () => { },
-  afterAllFailed = () => { },
-  retryDelay = 0,
-) => {
+// 带重试功能的 Promise 执行函数
+export const promiseWithRetry = async <T>(
+  promiseGenerator: () => Promise<T>,
+  chance: number,
+  beforeRetry: (error: any, remainingChances: number) => void = () => { },
+  afterAllFailed: () => void = () => { },
+  retryDelay: number = 0
+): Promise<T> => {
   while (chance--) {
     try {
       return await promiseGenerator();
     } catch (error) {
       beforeRetry(error, chance);
-
       if (chance) {
         // 重试前等待一段时间
         await new Promise(resolve => setTimeout(resolve, retryDelay));
@@ -76,22 +100,34 @@ export const promiseWithRetry = async (
     }
   }
   afterAllFailed();
+  throw new Error('All retry attempts failed.');
 };
 
+// 并行控制器类
 export class ParallelController {
-  constructor(maxInParallel) {
+  private maxInParallel: number;
+  private executing: Promise<void>[];
+
+  constructor(maxInParallel: number) {
     this.maxInParallel = maxInParallel;
     this.executing = [];
   }
 
-  async push(promiseGenerator) {
+  async push(promiseGenerator: () => Promise<void>): Promise<void> {
     while (this.executing.length >= this.maxInParallel) {
       await Promise.race(this.executing);
     }
+
     const promise = promiseGenerator();
+
     promise.catch(() => { }).finally(() => {
-      this.executing.splice(this.executing.findIndex(item => item === promise), 1);
-    })
+      // 从执行队列中移除已完成的任务
+      const index = this.executing.findIndex(item => item === promise);
+      if (index > -1) {
+        this.executing.splice(index, 1);
+      }
+    });
+
     this.executing.push(promise);
   }
 }

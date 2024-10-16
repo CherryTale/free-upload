@@ -4,6 +4,18 @@ All notable changes to the "free-upload" extension will be documented in this fi
 
 ## [Unreleased]
 
+## [0.0.19] - 2024/10/16
+
+### 新增
+
+- 使用Ngrok技术提供公网访问功能
+- 在HTTPS环境下支持屏幕共享功能
+- 使用NEXTJS提供更好的页面性能
+
+### 修改
+
+- 受限于vscode webview安全策略，停止支持webview
+
 ## [0.0.14] - 2024/09/10
 
 ### 新增

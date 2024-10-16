@@ -35,6 +35,7 @@
 
         .ql-editor {
             height: calc(10rem - 41.14px);
+            font-size: 20px;
         }
 
         .send-button {

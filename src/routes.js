@@ -99,7 +99,7 @@ const setupRoutes = (expressApp, io, app, handle, uploadDir, output) => {
                         res.status(500).json({ message: `Failed. File Corrupted` });
                     } else {
                         fs.rmSync(chunkDir, { recursive: true, force: true });
-                        output.appendLine(filePath);
+                        output.appendLine('file://' + filePath);
                         res.status(200).json({ message: 'All chunks uploaded successfully.' });
                         io.emit('chat message', { from: 'server', msg: `Received ${fileId}` });
                     }
@@ -126,7 +126,7 @@ const setupRoutes = (expressApp, io, app, handle, uploadDir, output) => {
 
     expressApp.post('/upload', upload.single('file'), (req, res) => {
         const filePath = path.join(uploadDir, getFileNameWithTag(req.body.fileName));
-        output.appendLine(filePath);
+        output.appendLine('file://' + filePath);
 
         simulateNetworkConditions((error) => {
             if (error) {

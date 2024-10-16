@@ -1,6 +1,6 @@
 {
   "name": "free-upload",
-  "displayName": "LazPay Efficent Tools",
+  "displayName": "LazPay Efficient Tools",
   "icon": "images/upload_icon.jpg",
   "description": "An upload server.",
   "version": "0.0.18",
@@ -47,10 +47,9 @@
     "lint": "eslint .",
     "pretest": "npm run lint",
     "test": "vscode-test",
-    "compile": "webpack --mode development && mkdir -p ./dist/fe &&  cp -r ./src/fe/.next ./dist/fe/.next",
     "watch": "webpack --mode development --watch",
     "vscode:prepublish": "npm run package",
-    "package": "webpack --mode production --devtool hidden-source-map && mkdir -p ./dist/fe && cp -r ./src/fe/.next ./dist/fe/.next"
+    "package": "webpack --mode production --devtool hidden-source-map && mkdir -p ./dist/fe && cp -r ./src/fe/.next ./dist/fe"
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
@@ -64,7 +63,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "@ngrok/ngrok": "1.4.1",
+    "@ngrok/ngrok": "^1.4.1",
     "crypto-js": "^4.2.0",
     "express": "^4.21.0",
     "multer": "1.4.5-lts.1",

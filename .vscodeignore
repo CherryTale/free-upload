@@ -16,3 +16,4 @@ tsconfig.json
 webpack.config.js
 esbuild.js
 .env
+extension.js

@@ -35,17 +35,21 @@ export const setupSocketEvents = (io: Server, output: OutputChannel): void => {
         // 将历史消息发送给新连接的客户端
         socket.emit('chat history', messageHistory);
 
-        socket.on('chat message', (msg: { from: string; msg: string }) => {
+        socket.on('chat message', (msg: { from: string; msg: string; id: number; type: string }) => {
             output.appendLine(`Message from ${msg.from}: ${msg.msg}`);
+            // 将新消息添加到历史记录中
+            messageHistory.push(msg);
             io.emit('chat message', msg);
         });
 
         socket.on('start-share', () => {
             shareId = socket.id;
+            // 向所有其他客户端广播新peer
             socket.broadcast.emit('new-peer', shareId);
         });
 
-        if (shareId) {
+        // 如果当前有正在共享的用户，向新连接的客户端发送共享者的ID
+        if (shareId && shareId !== socket.id) {
             socket.emit('new-peer', shareId);
         }
 

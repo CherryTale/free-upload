@@ -18,7 +18,7 @@ interface ShareProps {
     updateMessage: ChatHandle["updateMessage"];
 }
 
-const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
+const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage, setMessageList }) => {
     const peerConnectionsRef = useRef<PeerConnections>({});
     const localStreamRef = useRef<MediaStream | null>(null);
     const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
@@ -27,9 +27,33 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isSharing, setIsSharing] = useState<boolean>(false);
+    const [messageList, setLocalMessageList] = useState<Message[]>([]);
+
+    // 监听消息列表变化
+    useEffect(() => {
+        if (socket) {
+            const handleMessage = (message: Message) => {
+                // 忽略来自自己的停止分享消息
+                if (message.from === socket.id && message.msg === "屏幕分享已结束") {
+                    return;
+                }
+                // 忽略停止分享的系统消息，因为我们会通过 handleStopShareEvent 处理
+                if (message.from === "server" && typeof message.msg === "string" && message.msg === "屏幕分享已结束") {
+                    return;
+                }
+                setLocalMessageList(prev => [...prev, message]);
+            };
+            
+            socket.on("chat message", handleMessage);
+            
+            return () => {
+                socket.off("chat message", handleMessage);
+            };
+        }
+    }, [socket]);
 
     const handleStopShare = useCallback(() => {
-        // 更新视频和音频消息内容为"分享已结束"
+        // 更新视频消息内容为"分享已结束"
         const videoMessage: ComponentMessage = {
             id: -1,
             from: "server",
@@ -40,23 +64,23 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
                 </div>
             )
         };
+        // 直接更新消息内容，不删除消息
         updateMessage(-1, videoMessage);
 
-        const audioMessage: ComponentMessage = {
-            id: -2,
-            from: "server",
-            type: "component",
-            msg: (
-                <div style={{ color: "red" }}>
-                    音频分享已结束
-                </div>
-            )
-        };
-        updateMessage(-2, audioMessage);
+        // 发送停止共享消息给其他机器
+        socket?.emit("stop-share");
 
         // 停止视频和音频流的播放
         setVideoStream(null);
         setAudioStream(null);
+
+        // 清理视频和音频元素
+        if (videoRef.current) {
+            videoRef.current.srcObject = null;
+        }
+        if (audioRef.current) {
+            audioRef.current.srcObject = null;
+        }
 
         // 停止所有本地流
         if (localStreamRef.current) {
@@ -72,7 +96,45 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
         peerConnectionsRef.current = {};
 
         setIsSharing(false);
-    }, [updateMessage]);
+    }, [updateMessage, socket]);
+
+    // 处理停止共享事件
+    useEffect(() => {
+        if (socket) {
+            const handleStopShareEvent = () => {
+                // 更新视频消息内容为"分享已结束"
+                const videoMessage: ComponentMessage = {
+                    id: -1,
+                    from: "server",
+                    type: "component",
+                    msg: (
+                        <div style={{ color: "red" }}>
+                            屏幕分享已结束
+                        </div>
+                    )
+                };
+                // 直接更新消息内容，不删除消息
+                updateMessage(-1, videoMessage);
+                
+                // 清理视频和音频流
+                setVideoStream(null);
+                setAudioStream(null);
+                
+                if (videoRef.current) {
+                    videoRef.current.srcObject = null;
+                }
+                if (audioRef.current) {
+                    audioRef.current.srcObject = null;
+                }
+            };
+
+            socket.on("stop-share", handleStopShareEvent);
+
+            return () => {
+                socket.off("stop-share", handleStopShareEvent);
+            };
+        }
+    }, [socket, updateMessage]);
 
     useEffect(() => {
         if (videoStream) {
@@ -83,11 +145,20 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
                 msg: <video autoPlay muted ref={videoRef} />
             };
             addMessage(videoMessage);
-            setTimeout(() => {
+            
+            // 使用 requestAnimationFrame 代替 setTimeout
+            const frameId = requestAnimationFrame(() => {
                 if (videoRef.current) {
                     videoRef.current.srcObject = videoStream;
                 }
-            }, 1000);
+            });
+            
+            return () => {
+                cancelAnimationFrame(frameId);
+                if (videoRef.current) {
+                    videoRef.current.srcObject = null;
+                }
+            };
         }
     }, [videoStream, addMessage, socket?.id]);
 
@@ -100,11 +171,20 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
                 msg: <audio autoPlay ref={audioRef} />
             };
             addMessage(audioMessage);
-            setTimeout(() => {
+            
+            // 使用 requestAnimationFrame 代替 setTimeout
+            const frameId = requestAnimationFrame(() => {
                 if (audioRef.current) {
                     audioRef.current.srcObject = audioStream;
                 }
-            }, 1000);
+            });
+            
+            return () => {
+                cancelAnimationFrame(frameId);
+                if (audioRef.current) {
+                    audioRef.current.srcObject = null;
+                }
+            };
         }
     }, [audioStream, addMessage, socket?.id]);
 
@@ -116,6 +196,7 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
         if (socket) {
             const handleNewPeer = (peerId: string) => {
                 console.log('evt new-peer');
+                // 为每个新的对等连接创建一个新的 RTCPeerConnection
                 const peerConnection = new RTCPeerConnection();
                 peerConnectionsRef.current[peerId] = peerConnection;
 
@@ -199,7 +280,6 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
             socket.on("offer", handleOffer);
             socket.on("answer", handleAnswer);
             socket.on("ice-candidate", handleIceCandidate);
-            socket.on("stop-share", handleStopShare);
             socket.on("peer-disconnected", handlePeerDisconnected);
 
             return () => {
@@ -207,7 +287,6 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
                 socket.off("offer", handleOffer);
                 socket.off("answer", handleAnswer);
                 socket.off("ice-candidate", handleIceCandidate);
-                socket.off("stop-share", handleStopShare);
                 socket.off("peer-disconnected", handlePeerDisconnected);
 
                 handleStopShare();

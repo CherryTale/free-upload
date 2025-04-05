@@ -51,11 +51,12 @@ const Upload: React.FC<UploadProps> = ({ addMessage, updateMessage, socket }) =>
 
             // 创建一个新的消息气泡用于显示上传进度
             addMessage({
-                id: messageId, // 设置唯一 id，用于后续更新
+                id: messageId,
                 from: socket?.id || "upload",
+                type: "component",
                 msg: (
                     <div>
-                        <span>{file.name}</span>
+                        <span>正在上传: {file.name}</span>
                         <Progress
                             percent={0}
                             status="active"
@@ -69,15 +70,31 @@ const Upload: React.FC<UploadProps> = ({ addMessage, updateMessage, socket }) =>
             const updateProgress = (progressValue: number, status: "active" | "success" | "exception" = "active") => {
                 uploadedSize += progressValue;
                 // 在更新进度时同时更新对应的对话气泡内容
-                updateMessage(messageId, (
-                    <div>
-                        <span>{file.name}</span>
-                        <Progress
-                            percent={Math.floor((uploadedSize / file.size) * 100)} // 根据实际进度更新
-                            status={status}
-                        />
-                    </div>
-                ));
+                updateMessage(messageId, {
+                    id: messageId,
+                    from: socket?.id || "upload",
+                    type: "component",
+                    msg: (
+                        <div>
+                            <span>正在上传: {file.name}</span>
+                            <Progress
+                                percent={Math.floor((uploadedSize / file.size) * 100)}
+                                status={status}
+                            />
+                        </div>
+                    )
+                });
+
+                // 如果上传完成，发送系统消息给其他机器
+                if (status === "success") {
+                    // 发送消息到服务器，让其他机器也能看到
+                    socket?.emit("chat message", {
+                        id: Date.now(),
+                        from: "server",
+                        type: "component",
+                        msg: `文件 ${file.name} 上传完成`
+                    });
+                }
             };
 
             if (file.size > threshold) {

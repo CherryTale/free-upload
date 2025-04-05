@@ -7,6 +7,7 @@ import { Socket } from "socket.io-client";
 import MessageBubble from "../MessageBubble/index";
 import "./index.css";
 import "react-quill/dist/quill.snow.css";
+import { Message, TextMessage, ComponentMessage } from '../../types/message';
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 interface ChatProps {
@@ -14,17 +15,11 @@ interface ChatProps {
     children: React.ReactNode;
 }
 
-interface Message {
-    id: number;
-    from: string;
-    msg: React.ReactNode; // 允许传入 React 组件
-}
-
 // 定义 ChatHandle 接口，用于描述暴露的函数
 export interface ChatHandle {
     addMessage: (newMessage: Message) => void;
     setMessageList: (messages: Message[]) => void;
-    updateMessage: (id: number, updatedMsg: React.ReactNode) => void;
+    updateMessage: (id: number, updatedMsg: Message | React.ReactNode) => void;
 }
 
 const Chat = forwardRef<ChatHandle, ChatProps>(({ socket, children }, ref) => {
@@ -37,11 +32,23 @@ const Chat = forwardRef<ChatHandle, ChatProps>(({ socket, children }, ref) => {
             setMessageList((prevMessages) => [...prevMessages, newMessage]);
         },
         setMessageList,
-        updateMessage: (id: number, updatedMsg: React.ReactNode) => {
+        updateMessage: (id: number, updatedMsg: Message | React.ReactNode) => {
             setMessageList(prevMessages => {
-                const updatedMessages = prevMessages.map(msg =>
-                    msg.id === id ? { ...msg, msg: updatedMsg } : msg
-                );
+                const updatedMessages = prevMessages.map(msg => {
+                    if (msg.id === id) {
+                        if (updatedMsg && typeof updatedMsg === 'object' && 'type' in updatedMsg) {
+                            // 如果 updatedMsg 是 Message 类型
+                            return updatedMsg as Message;
+                        } else if (updatedMsg !== null && updatedMsg !== undefined) {
+                            // 如果 updatedMsg 是 React.ReactNode
+                            return {
+                                ...msg,
+                                msg: updatedMsg
+                            } as Message;
+                        }
+                    }
+                    return msg;
+                });
                 return updatedMessages;
             });
         },
@@ -49,10 +56,10 @@ const Chat = forwardRef<ChatHandle, ChatProps>(({ socket, children }, ref) => {
 
     useEffect(() => {
         if (socket) {
-            const handleMessage = (message: Message): void => {
+            const handleMessage = (message: TextMessage): void => {
                 setMessageList(prevMessages => [...prevMessages, message]);
             };
-            const handleHistory = (history: Message[]): void => {
+            const handleHistory = (history: TextMessage[]): void => {
                 setMessageList(history);
             };
 
@@ -78,7 +85,13 @@ const Chat = forwardRef<ChatHandle, ChatProps>(({ socket, children }, ref) => {
         if (!plainText) {
             return;
         }
-        socket?.emit("chat message", message);
+        const textMessage: TextMessage = {
+            id: Date.now(),
+            from: socket?.id || "unknown",
+            type: 'text',
+            msg: message
+        };
+        socket?.emit("chat message", textMessage);
         setMessage("");
     };
 
@@ -94,9 +107,8 @@ const Chat = forwardRef<ChatHandle, ChatProps>(({ socket, children }, ref) => {
                         isOwnMessage={message.from === socket?.id}
                         isServerMessage={message.from === "server"}
                         messageIndex={index}
-                    >
-                        {message.msg}
-                    </MessageBubble>
+                        message={message}
+                    />
                 ))}
             </ul>
 

@@ -5,23 +5,23 @@ import { CopyTwoTone, CopyFilled } from "@ant-design/icons";
 import DOMPurify from "dompurify";
 import { message as antdMessage } from "antd";
 import "./index.css";
+import { Message, TextMessage, ComponentMessage } from '../../types/message';
 
 interface MessageBubbleProps {
     from: string;
     isOwnMessage: boolean;
     isServerMessage: boolean;
     messageIndex: number;
-    children: React.ReactNode; // 允许传递自定义内容
+    message: Message;
 }
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
     isOwnMessage,
     isServerMessage,
     messageIndex,
-    children,
+    message,
 }) => {
     const [messageApi, contextHolder] = antdMessage.useMessage();
-    const isStringContent = typeof children === "string";
 
     // 复制富文本内容
     const handleCopyHTML = async (msg: string): Promise<void> => {
@@ -107,27 +107,27 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
     return (
         <li className={`message-item ${isOwnMessage ? "from-me" : isServerMessage ? "from-server" : "from-other"}`}>
             {contextHolder}
-            {isStringContent ?
+            {message.type === 'text' ? (
                 <span
                     className="message-content"
-                    title={isServerMessage ? children as string : ""}
-                    dangerouslySetInnerHTML={{ __html: children }}
+                    title={isServerMessage ? message.msg : ""}
+                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(message.msg) }}
                 />
-                :
-                <span className="message-content">{children}</span>
-            }
-            {!isServerMessage && isStringContent && (
+            ) : (
+                <span className="message-content">{message.msg}</span>
+            )}
+            {!isServerMessage && message.type === 'text' && (
                 <footer>
                     <CopyTwoTone
                         id={`copy-text-btn-${messageIndex}`}
                         className="copy-btn"
-                        onClick={() => handleCopyText(children)}
+                        onClick={() => handleCopyText(message.msg)}
                         title="Copy plain text"
                     />
                     <CopyFilled
                         id={`copy-html-btn-${messageIndex}`}
                         className="copy-btn-rich"
-                        onClick={() => handleCopyHTML(children)}
+                        onClick={() => handleCopyHTML(message.msg)}
                         title="Copy rich text"
                     />
                 </footer>

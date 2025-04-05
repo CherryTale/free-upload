@@ -3,7 +3,7 @@ import { OutputChannel } from 'vscode';
 
 interface Message {
     from: string;
-    msg: string;
+    msg: string | { type: string; content: any };
     id: number;
 }
 

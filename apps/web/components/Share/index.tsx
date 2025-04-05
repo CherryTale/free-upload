@@ -5,6 +5,7 @@ import { Socket } from "socket.io-client";
 import { Button } from "antd";
 import { ChatHandle } from '../Chat';
 import "./index.css";
+import { Message, ComponentMessage } from '../../types/message';
 
 interface PeerConnections {
     [key: string]: RTCPeerConnection;
@@ -29,17 +30,29 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
 
     const handleStopShare = useCallback(() => {
         // 更新视频和音频消息内容为"分享已结束"
-        updateMessage(-1, (
-            <div style={{ color: "red" }}>
-                屏幕分享已结束
-            </div>
-        ));
+        const videoMessage: ComponentMessage = {
+            id: -1,
+            from: "server",
+            type: "component",
+            msg: (
+                <div style={{ color: "red" }}>
+                    屏幕分享已结束
+                </div>
+            )
+        };
+        updateMessage(-1, videoMessage);
 
-        updateMessage(-2, (
-            <div style={{ color: "red" }}>
-                音频分享已结束
-            </div>
-        ));
+        const audioMessage: ComponentMessage = {
+            id: -2,
+            from: "server",
+            type: "component",
+            msg: (
+                <div style={{ color: "red" }}>
+                    音频分享已结束
+                </div>
+            )
+        };
+        updateMessage(-2, audioMessage);
 
         // 停止视频和音频流的播放
         setVideoStream(null);
@@ -63,11 +76,13 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
 
     useEffect(() => {
         if (videoStream) {
-            addMessage({
+            const videoMessage: ComponentMessage = {
                 id: -1,
                 from: socket?.id || "share",
+                type: "component",
                 msg: <video autoPlay muted ref={videoRef} />
-            })
+            };
+            addMessage(videoMessage);
             setTimeout(() => {
                 if (videoRef.current) {
                     videoRef.current.srcObject = videoStream;
@@ -78,11 +93,13 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
 
     useEffect(() => {
         if (audioStream) {
-            addMessage({
+            const audioMessage: ComponentMessage = {
                 id: -2,
                 from: socket?.id || "share",
+                type: "component",
                 msg: <audio autoPlay ref={audioRef} />
-            })
+            };
+            addMessage(audioMessage);
             setTimeout(() => {
                 if (audioRef.current) {
                     audioRef.current.srcObject = audioStream;

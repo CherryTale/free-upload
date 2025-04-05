@@ -1,23 +1,31 @@
-require('dotenv').config();
-const os = require('os');
-const http = require('http');
-const socketIo = require('socket.io').Server;
-const express = require('express');
-const vscode = require('vscode');
-const qr = require('qrcode-terminal');
-const ngrok = require('@ngrok/ngrok');
-const next = require('next');
-const path = require('path');
-const { getInternalIP, getFreePort, serverListen, serverClose } = require('./utils.js');
-const { setupSocketEvents } = require('./socket.js');
-const { setupRoutes } = require('./routes.js');
+import dotenv from 'dotenv';
+import os from 'os';
+import http from 'http';
+import { Server as SocketIoServer } from 'socket.io';
+import express from 'express';
+import vscode from 'vscode';
+import qr from 'qrcode-terminal';
+import ngrok from '@ngrok/ngrok';
+import next from 'next';
+import path from 'path';
+import { getInternalIP, getFreePort, serverListen, serverClose } from './utils';
+import { setupSocketEvents } from './socket';
+import { setupRoutes } from './routes';
 
-const createThenStartServer = async (output) => {
+dotenv.config();
+
+interface ServerInfo {
+  stopServer: () => Promise<void>;
+  remoteUrl?: string;
+  localUrl: string;
+}
+
+const createThenStartServer = async (output: vscode.OutputChannel): Promise<ServerInfo> => {
   const ip = getInternalIP();
   const port = await getFreePort(3000, 4000);
 
   const localUrl = `http://${ip}:${port}`;
-  let remoteUrl;
+  let remoteUrl: string | undefined;
   const uploadDir = vscode.workspace.getConfiguration('free-upload').get('uploadFolder', '') || path.join(os.homedir(), 'uploads');
   const authtoken = vscode.workspace.getConfiguration('free-upload').get('authToken', '') || process.env.NGROK_AUTH_TOKEN;
 
@@ -31,7 +39,7 @@ const createThenStartServer = async (output) => {
 
   const expressApp = express();
   const server = http.createServer(expressApp);
-  const io = new socketIo(server);
+  const io = new SocketIoServer(server);
 
   expressApp.use(express.static(path.join(__dirname, 'public')));
 
@@ -42,13 +50,16 @@ const createThenStartServer = async (output) => {
   if (authtoken) {
     try {
       const listener = await ngrok.forward({ addr: port, authtoken });
-      remoteUrl = listener.url();
-      qr.generate(remoteUrl, { small: true }, (qrcode) => {
-        const lines = qrcode.split('\n');
-        const filtered = lines.filter(line => line.trim() !== '');
-        filtered[filtered.length - 1] += "\tRemote address: " + remoteUrl;
-        output.appendLine('\n' + filtered.join('\n'));
-      });
+      const url = listener.url();
+      if (url) {
+        remoteUrl = url;
+        qr.generate(remoteUrl, { small: true }, (qrcode) => {
+          const lines = qrcode.split('\n');
+          const filtered = lines.filter(line => line.trim() !== '');
+          filtered[filtered.length - 1] += "\tRemote address: " + remoteUrl;
+          output.appendLine('\n' + filtered.join('\n'));
+        });
+      }
     } catch (err) {
       output.appendLine(`ngrok tunnel failed: ${err}. Falling back to local URL.`);
     }
@@ -93,5 +104,4 @@ const createThenStartServer = async (output) => {
   return { stopServer, remoteUrl, localUrl };
 };
 
-// 使用 CommonJS 模块的导出语法
-module.exports = createThenStartServer;
+module.exports = createThenStartServer; 

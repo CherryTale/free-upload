@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const createThenStartServer = require('./src/index');
+const createThenStartServer = require('@server/index');
 
 /**
  * @param {vscode.ExtensionContext} context

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Socket } from "socket.io-client";
 import { Button } from "antd";
 import { ChatHandle } from '../Chat';
@@ -27,6 +27,40 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
     const audioRef = useRef<HTMLAudioElement>(null);
     const [isSharing, setIsSharing] = useState<boolean>(false);
 
+    const handleStopShare = useCallback(() => {
+        // 更新视频和音频消息内容为"分享已结束"
+        updateMessage(-1, (
+            <div style={{ color: "red" }}>
+                屏幕分享已结束
+            </div>
+        ));
+
+        updateMessage(-2, (
+            <div style={{ color: "red" }}>
+                音频分享已结束
+            </div>
+        ));
+
+        // 停止视频和音频流的播放
+        setVideoStream(null);
+        setAudioStream(null);
+
+        // 停止所有本地流
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => track.stop());
+            localStreamRef.current = null;
+        }
+
+        // 停止所有 PeerConnection 并清理资源
+        Object.values(peerConnectionsRef.current).forEach(peer => {
+            peer.getSenders().forEach(sender => peer.removeTrack(sender));
+            peer.close();
+        });
+        peerConnectionsRef.current = {};
+
+        setIsSharing(false);
+    }, [updateMessage]);
+
     useEffect(() => {
         if (videoStream) {
             addMessage({
@@ -40,7 +74,7 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
                 }
             }, 1000);
         }
-    }, [videoStream])
+    }, [videoStream, addMessage, socket?.id]);
 
     useEffect(() => {
         if (audioStream) {
@@ -55,7 +89,7 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
                 }
             }, 1000);
         }
-    }, [audioStream])
+    }, [audioStream, addMessage, socket?.id]);
 
     useEffect(() => {
         setCanShare(!!MediaRecorder && !!(navigator?.mediaDevices?.getDisplayMedia))
@@ -162,43 +196,9 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
                 handleStopShare();
             };
         }
-    }, [socket]);
+    }, [socket, handleStopShare]);
 
-    const handleStopShare = () => {
-        // 更新视频和音频消息内容为“分享已结束”
-        updateMessage(-1, (
-            <div style={{ color: "red" }}>
-                屏幕分享已结束
-            </div>
-        ));
-
-        updateMessage(-2, (
-            <div style={{ color: "red" }}>
-                音频分享已结束
-            </div>
-        ));
-
-        // 停止视频和音频流的播放
-        setVideoStream(null);
-        setAudioStream(null);
-
-        // 停止所有本地流
-        if (localStreamRef.current) {
-            localStreamRef.current.getTracks().forEach(track => track.stop());
-            localStreamRef.current = null;
-        }
-
-        // 停止所有 PeerConnection 并清理资源
-        Object.values(peerConnectionsRef.current).forEach(peer => {
-            peer.getSenders().forEach(sender => peer.removeTrack(sender));
-            peer.close();
-        });
-        peerConnectionsRef.current = {};
-
-        setIsSharing(false);
-    };
-
-    const handleStartShare = async () => {
+    const handleStartShare = useCallback(async () => {
         try {
             localStreamRef.current = await navigator.mediaDevices.getDisplayMedia({ video: true });
 
@@ -215,7 +215,7 @@ const Share: React.FC<ShareProps> = ({ socket, addMessage, updateMessage }) => {
         } catch (err) {
             console.error("Error accessing display media: ", err);
         }
-    };
+    }, [socket, handleStopShare]);
 
     return (<>
         {canShare && !videoStream && !audioStream && (isSharing ?

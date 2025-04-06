@@ -69,4 +69,22 @@ export const serverClose = (server: Server): Promise<void> => {
             else resolve();
         });
     });
+};
+
+export const simulateNetworkConditions = (callback: (error?: Error) => void): void => {
+    const isProduction = process.env.NODE_ENV === 'production';
+    if (isProduction) {
+        callback();
+    } else {
+        const delay = 0 * Math.random();
+        const shouldDropPacket = Math.random() < 0;
+
+        setTimeout(() => {
+            if (shouldDropPacket) {
+                callback(new Error('Simulated packet loss.'));
+            } else {
+                callback();
+            }
+        }, delay);
+    }
 }; 

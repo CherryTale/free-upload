@@ -62,9 +62,9 @@ const ChunkUploadFunc = async (
 ): Promise<void> => {
   const uploadPromiseList: Promise<void>[] = [];
   const uploadedIndices = loadMapFromLocalStorage(file.name) as Map<number, string>;
+  const incrementalHash = new SparkMD5.ArrayBuffer();
 
   try {
-    let incrementalHash = new SparkMD5.ArrayBuffer(); // 用于计算文件的增量 MD5 哈希
     const totalChunks = Math.ceil(file.size / chunkSize);
     const controller = new AbortController();
 
@@ -76,9 +76,6 @@ const ChunkUploadFunc = async (
       const start = i * chunkSize;
       const end = start + chunkSize > file.size ? file.size : start + chunkSize;
       const chunk = file.slice(start, end);
-      const arrayBuffer = await chunk.arrayBuffer();
-      incrementalHash = incrementalHash.append(arrayBuffer);
-      const chunkHash = SparkMD5.ArrayBuffer.hash(arrayBuffer);
 
       if (uploadedIndices.has(i)) {
         console.log(`Chunk-${i} already uploaded.`);
@@ -88,8 +85,13 @@ const ChunkUploadFunc = async (
         formData.append('chunkIndex', i.toString());
         formData.append('totalChunks', totalChunks.toString());
         formData.append('fileId', file.name);
-        formData.append('hash', chunkHash);
         formData.append('chunk', chunk, `chunk-${i}`);
+
+        // 计算分片哈希
+        const chunkBuffer = await chunk.arrayBuffer();
+        const chunkHash = SparkMD5.ArrayBuffer.hash(chunkBuffer);
+        incrementalHash.append(chunkBuffer);
+        formData.append('hash', chunkHash);
 
         await parallelController.push(() => {
           console.log(`Start uploading chunk-${i}`);

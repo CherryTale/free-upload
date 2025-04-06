@@ -7,7 +7,7 @@ import { Socket } from "socket.io-client";
 import MessageBubble from "../MessageBubble/index";
 import "./index.css";
 import "react-quill/dist/quill.snow.css";
-import { Message, TextMessage, ComponentMessage } from '../../types/message';
+import { Message, TextMessage } from '../../types/message';
 const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 
 interface ChatProps {

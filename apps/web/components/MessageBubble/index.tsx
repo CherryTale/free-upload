@@ -5,7 +5,7 @@ import { CopyTwoTone, CopyFilled } from "@ant-design/icons";
 import DOMPurify from "dompurify";
 import { message as antdMessage } from "antd";
 import "./index.css";
-import { Message, TextMessage, ComponentMessage } from '../../types/message';
+import { Message } from '../../types/message';
 
 interface MessageBubbleProps {
     from: string;

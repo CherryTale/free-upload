@@ -1,5 +1,5 @@
-const vscode = require('vscode');
-const createThenStartServer = require('@server/index');
+import * as vscode from 'vscode';
+import createThenStartServer from '@server/index';
 
 /**
  * @param {vscode.ExtensionContext} context
@@ -48,7 +48,7 @@ function deactivate() {
 	vscode.commands.executeCommand('free-upload.uploadStop')
 }
 
-module.exports = {
+export {
 	activate,
 	deactivate
 }

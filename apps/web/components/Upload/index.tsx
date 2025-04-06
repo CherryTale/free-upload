@@ -10,7 +10,7 @@ import { ParallelController } from './utils';
 import { ChatHandle } from '../Chat';
 import { Socket } from "socket.io-client";
 
-const threshold: number = Math.pow(2, 30);
+const threshold: number = Math.pow(2, 30); // 1GB
 const maxInParallel: number = 6;
 
 interface UploadProps {
@@ -84,17 +84,6 @@ const Upload: React.FC<UploadProps> = ({ addMessage, updateMessage, socket }) =>
                         </div>
                     )
                 });
-
-                // 如果上传完成，发送系统消息给其他机器
-                if (status === "success") {
-                    // 发送消息到服务器，让其他机器也能看到
-                    socket?.emit("chat message", {
-                        id: Date.now(),
-                        from: "server",
-                        type: "component",
-                        msg: `文件 ${file.name} 上传完成`
-                    });
-                }
             };
 
             if (file.size > threshold) {
